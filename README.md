@@ -23,8 +23,8 @@ A powerful, extensible server for advanced stock market analysis and insights, b
 
 1. **Clone the repository:**
    ```bash
-   git clone <your-repo-url>
-   cd <your-repo-directory>
+   git clone https://github.com/edenmargolis/Advanced-Stock-Market-Analysis-MCP-Server
+   cd Advanced-Stock-Market-Analysis-MCP-Server
    ```
 2. **Install dependencies:**
    ```bash
