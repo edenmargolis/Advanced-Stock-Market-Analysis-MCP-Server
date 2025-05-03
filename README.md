@@ -11,12 +11,14 @@ A powerful, extensible server for advanced stock market analysis and insights, b
 - **Compare Stocks**: Compare multiple stocks on key metrics and performance.
 - **Sector Performance**: Analyze the performance of major market sectors using sector ETFs.
 - **Market Sentiment**: Assess overall market sentiment using major indices and the VIX.
+- **Get Stock News**: Scrape and retrieve the latest news headlines and URLs for any stock from Finviz, with a recommended agent prompt for sentiment analysis and summary.
 
 ## Technology Stack
 
 - **Python 3.8+**
 - [yfinance](https://github.com/ranaroussi/yfinance) for stock data
 - [fastapi](https://fastapi.tiangolo.com/) (required by MCP server)
+- [requests](https://docs.python-requests.org/) and [beautifulsoup4](https://www.crummy.com/software/BeautifulSoup/) for web scraping
 - **MCP (Model Context Protocol)** for tool-based server architecture
 
 ## Installation
@@ -58,6 +60,10 @@ You can then interact with the server using any MCP-compatible client or integra
   ```json
   { "tickers": ["AAPL", "MSFT", "GOOGL"] }
   ```
+- **Get stock news:**
+  ```json
+  { "ticker": "TSLA", "count": 4 }
+  ```
 
 ## Project Structure
 
@@ -67,7 +73,16 @@ You can then interact with the server using any MCP-compatible client or integra
 
 ## Notes
 - All stock data is fetched live from Yahoo Finance via yfinance.
+- News headlines and URLs are scraped from Finviz for the `get_stock_news` tool.
 - Error handling and retry logic are built-in for robust operation.
+
+## Agent Prompt for News Sentiment Analysis
+
+When using the `get_stock_news` tool, use the following prompt for best results with an LLM agent:
+
+```
+Get the latest news of {{ticker}} stock. For each article, read the full content, assess whether the sentiment is positive, negative, or neutral, and then write a summary of the overall sentiment and your conclusions about {{ticker}} based on these articles.
+```
 
 ---
 

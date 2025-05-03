@@ -4,6 +4,8 @@ import numpy as np
 import sys
 import logging
 import time
+import requests
+from bs4 import BeautifulSoup
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -507,6 +509,62 @@ def get_market_sentiment() -> dict:
     except Exception as e:
         logger.error(f"Error in get_market_sentiment: {str(e)}")
         return {"error": f"Failed to get market sentiment: {str(e)}"}
+
+@mcp.tool()
+def get_stock_news(ticker: str, count: int = 4) -> dict:
+    """
+    Scrape the latest news links for a stock from finviz.com.
+    Args:
+        ticker: The stock ticker symbol (e.g., AAPL, MSFT)
+        count: Number of latest news articles to fetch (default: 4)
+    Returns:
+        Dictionary containing news URLs for the stock
+
+    ---
+    # Agent Prompt (recommended for best results)
+    Get the latest news of {{ticker}} stock. For each article, read the full content, assess whether the sentiment is positive, negative, or neutral, and then write a summary of the overall sentiment and your conclusions about {{ticker}} based on these articles.
+    ---
+    """
+    try:
+        url = f"https://finviz.com/quote.ashx?t="+ticker
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+        }
+        response = requests.get(url, headers=headers, timeout=10)
+        if response.status_code != 200:
+            logger.error(f"Failed to fetch Finviz page for {ticker}: Status {response.status_code}")
+            return {"status": "error", "message": f"Failed to fetch Finviz page: Status {response.status_code}", "ticker": ticker}
+        soup = BeautifulSoup(response.text, "html.parser")
+        news_table = soup.find("table", id="news-table")
+        if not news_table:
+            logger.error(f"No news table found for {ticker} on Finviz.")
+            return {"status": "error", "message": "No news table found on Finviz.", "ticker": ticker}
+        # Handle both cases: with or without <tbody>
+        tbody = news_table.find("tbody")
+        rows = tbody.find_all("tr") if tbody else news_table.find_all("tr")
+        news_links = []
+        for tr in rows:
+            link_div = tr.find("div", class_="news-link-left")
+            if link_div:
+                a_tag = link_div.find("a", href=True)
+                if a_tag and a_tag["href"]:
+                    news_links.append({
+                        "title": a_tag.get_text(strip=True),
+                        "url": a_tag["href"]
+                    })
+            if len(news_links) >= count:
+                break
+        if not news_links:
+            return {"status": "error", "message": f"No news links found for {ticker} on Finviz.", "ticker": ticker}
+        return {
+            "status": "success",
+            "ticker": ticker,
+            "news_count": len(news_links),
+            "news": news_links
+        }
+    except Exception as e:
+        logger.error(f"Error in get_stock_news for {ticker}: {str(e)}")
+        return {"status": "error", "message": f"Failed to scrape news: {str(e)}", "ticker": ticker}
 
 if __name__ == "__main__":
     try:
